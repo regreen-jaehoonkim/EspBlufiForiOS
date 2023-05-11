@@ -29,6 +29,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)isStaConnectWiFi;
 
+/**
+블루투스 장치의 상태 정보를 문자열 형태로 반환하는 메소드입니다.
+@return 블루투스 장치의 상태 정보를 문자열 형태로 반환합니다.
+*/
 - (NSString *)getStatusInfo;
 
 @end

@@ -49,12 +49,24 @@
     [self scanDeviceInfo];
 }
 
+/**
+ESPFBYBleHelper 객체를 사용하여 BLE 장치 검색을 시작하는 메소드입니다.
+검색된 장치를 dataSource 배열(peripheralArray)에 추가하고, 메인 스레드에서 테이블 뷰나 컬렉션 뷰를 리로드합니다.
+*/
 - (void)scanDeviceInfo {
     NSLog(@"vc 扫描设备");
+    
+    // 이전 검색 결과를 제거하고 새로운 검색을 시작하기 전에 dataSource 배열(peripheralArray)을 초기화 합니다.
     [self.dataSource removeAllObjects];
+
+    // ESPFBYBleHelper 객체를 사용하여 BLE 장치 검색을 시작합니다.
     [self.espFBYBleHelper startScan:^(ESPPeripheral * _Nonnull device) {
+
+        // 검색된 디바이스를 dataSource 배열(peripheralArray)에 추가합니다.
         if ([self shouldAddToSource:device]) {
             [self.dataSource addObject:device];
+            
+            // 메인 스레드에서 테이블 뷰나 컬렉션 뷰를 리로드합니다.
             dispatch_async(dispatch_get_main_queue(), ^{
                 [self.peripheralView reloadData];
             });
@@ -131,20 +143,35 @@
     return cell;
 }
 
+// 테이블 뷰 셀 선택시 호출되는 메소드.
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    // 셀 선택 해제 앤;메이션을 적용합니다.
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
+
+    // BLE 장치 배열이 유효하지 않으면 메소드를 종료합니다.
     if (!ValidArray(_peripheralArray)) {
         return;
     }
+
+    // 선택된 셀에 해당하는 BLE 장치의 상세 정보를 표시하는 ESPDetailViewController 인스턴스를 생성합니다.
     ESPDetailViewController *dvc = [ESPDetailViewController new];
+
+    // 선택된 셀에 해당하는 BLE 장치 객체를 설정합니다.
     dvc.device = _peripheralArray[indexPath.row];
+
+    // EPSDetailViewController를 푸시하여 선택된 BLE 장치의 상세정보를 표시합니다.
     [self.navigationController pushViewController:dvc animated:YES];
 }
 
+// 검색된 BLE 장치를 저장하는 배열입니다.
 - (NSMutableArray *)dataSource {
+    // 배열이 nil인 경우, 새로운 NSMutableArray 인스턴스를 생성합니다.
     if (!_peripheralArray) {
         _peripheralArray = [[NSMutableArray alloc] init];
     }
+    
+    // 생성된 배열을 반환합니다.
     return _peripheralArray;
 }
 

@@ -157,14 +157,24 @@ typedef enum {
 - (void)onButtonTouchUp:(UIButton *)sender {
     [self setButton:sender pressed:NO];
 }
+/**
+버튼을 누를 때 호출되는 액션 메소드 입니다.
 
+@param sender 눌린 버튼입니다.
+
+ */
 - (void)onButtonPressed:(UIButton *)sender {
+    // 버튼의 선택 상태를 변경합니다.
     sender.selected = !sender.selected;
+
+    // 버튼의 태그에 따라 다른 동작을 수행합니다. 
     switch (sender.tag) {
         case TagConnect:
+            // 블루투스 연결을 시도합니다.
             [self connect];
             break;
         case TagDisconnect:
+            // 블루투스 연결을 해제합니다.
             if (_blufiClient) {
                 [_blufiClient requestCloseConnection];
             }
@@ -203,6 +213,7 @@ typedef enum {
         default:
             break;
     }
+    // 버튼의 눌림 상태를 변경합니다.
     [self setButton:sender pressed:NO];
 }
 
@@ -234,6 +245,12 @@ typedef enum {
     }];
 }
 
+/**
+BlufiClient 객체를 생성하여 ESP32 기기에 연결합니다.
+연결 전에 _blufiClient 객체가 이미 생성되어 있다면 해당 객체를 close() 메소드를 호출하여 닫고 nil로 설정합니다.
+그 후 새로운 BlufiClient 객체를 생성하고 _blufiClient 객체의 중앙 관리자 및 peripheralDelegate, blufiDelegate를 설정한 후 ESP32 기기의 UUID를 매개변수로 connect() 메소드를 호출하여 연결을 시도합니다.
+연결 버튼은 눌림 상태를 false로 설정합니다.
+*/
 - (void)connect {
     [self setButton:_connectBtn enable:NO];
     if (_blufiClient) {
@@ -254,18 +271,27 @@ typedef enum {
     [self.navigationController pushViewController:pvc animated:YES];
 }
 
+/**
+블루투스 연결이 되어 있고, 블루투스 장치에 설정 값을 전송하는 메소드입니다.
+@param params 전송할 설정 값이 담긴 BlufiConfigureParams 객체
+*/
 - (void)didSetParams:(BlufiConfigureParams *)params {
     if (_blufiClient && _connected) {
         [_blufiClient configure:params];
     }
 }
 
+/**
+블루투스 연결된 장치에게 커스텀 데이터를 보내기 위해 사용되는 알림창을 보여주는 메소드입니다.
+*/
 - (void)showCustomDataAlert {
+    // UIAlertController 객체를 생성하고, 취소 및 확인 버튼을 추가합니다.
     UIAlertController *alertController = [UIAlertController alertControllerWithTitle:nil message:INTER_STR(@"EspBlufi-custom-data") preferredStyle:UIAlertControllerStyleAlert];
     [alertController addAction:[UIAlertAction actionWithTitle:INTER_STR(@"cancel") style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
         [self setButton:self.customBtn enable:self.connected];
     }]];
     [alertController addAction:[UIAlertAction actionWithTitle:INTER_STR(@"ok") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+        // 확인 버튼을 누르면 텍스트 필드에 입력된 커스텀 데이터를 가져와서 _blufiClient 객체의 postCustomData: 메소드를 호출하여 데이터를 보냅니다.
         [self setButton:self.customBtn enable:self.connected];
         UITextField *filterTextField = alertController.textFields.firstObject;
         NSString *text = filterTextField.text;
@@ -274,9 +300,11 @@ typedef enum {
             [self.blufiClient postCustomData:data];
         }
     }]];
+    // 알림창에 텍스트 필드를 추가합니다.
     [alertController addTextFieldWithConfigurationHandler:^(UITextField * _Nonnull textField) {
         textField.placeholder = INTER_STR(@"EspBlufi-custom-data-hint");
     }];
+    // 알림창을 화면에 보여줍니다.
     [self presentViewController:alertController animated:YES completion:nil];
 }
 
@@ -378,6 +406,12 @@ typedef enum {
     }
 }
 
+/**
+블루투스 장치로부터 상태 응답을 수신했을 때 호출되는 델리게이트 메소드입니다.
+@param client BlufiClient 객체
+@param response 수신한 BlufiStatusResponse 객체
+@param status 응답 상태 코드
+*/
 - (void)blufi:(BlufiClient *)client didReceiveDeviceStatusResponse:(BlufiStatusResponse *)response status:(BlufiStatusCode)status {
     [[NSOperationQueue mainQueue] addOperationWithBlock:^{
         [self setButton:self.stateBtn enable:self.connected];
@@ -413,6 +447,14 @@ typedef enum {
     }
 }
 
+/**
+ * BlufiClient 에서 커스텀 데이터를 수신한 경우 호출되는 메소드
+ *
+ * @param client Blufi 클라이언트 객체
+ * @param data 수신된 커스텀 데이터
+ * @param status Blufi 상태 코드
+ * 
+ */
 - (void)blufi:(BlufiClient *)client didReceiveCustomData:(NSData *)data status:(BlufiStatusCode)status {
     NSString *customString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     [self updateMessage:[NSString stringWithFormat:@"Receive device custom data: %@", customString]];

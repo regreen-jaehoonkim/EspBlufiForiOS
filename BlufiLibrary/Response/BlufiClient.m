@@ -182,16 +182,34 @@ enum {
     [_centralManager scanForPeripheralsWithServices:nil options:nil];
 }
 
+
+/**
+지정된 식별자를 가진 BLE 장치에 대한 연결을 시도하는 메소드입니다.
+@param identifier 연결할 BLE 장치의 식별자입니다.
+
+@discussion
+BlufiClient가 종료된 경우 예외를 발생시킵니다.
+연결을 초기화하고, BLE 장치의 식별자를 설정한 다음, BLE 전원이 커져있는지 확인합니다.
+BLE 전원이 켜져 있으면 BLE 장치 스캔을 시작하고, 그렇지 않은 경우 _bleConnectMark를 YES로 설정합니다.
+
+*/
 - (void)connect:(NSString *)identifier {
     if (_closed) {
         @throw [[NSException alloc] initWithName:@"NSStateException" reason:@"The BlufiClient is closed" userInfo:nil];
         return;
     }
+    // 연결을 초기화합니다.
     [self clearConnection];
+
+    // BLE 장치의 식별자를 설정합니다.
     _identifier = [[NSUUID alloc] initWithUUIDString:identifier];
+    
+    // BLE 전원이 커져있는지 확인합니다.
     if (_blePowerOn) {
+        // BLE 장치 스캔을 시작합니다.
         [self scanBLE];
     } else {
+        // BLE 전원이 꺼져 있는 경우 _bleConnectMark를 YES로 설정합니다.
         _bleConnectMark = YES;
     }
 }
@@ -454,11 +472,18 @@ enum {
     return frameCtrlData.hasFrag ? NotifyHasFrag : NotifyComplete;
 }
 
+/**
+ 블루투스 장치에서 수신한 데이터를 처리하는 메소드입니다.
+ 
+ @param data BlufiNotifyData 객체입니다.
+ */
 - (void)parseBlufiNotifyData:(BlufiNotifyData *)data {
+    // 블루투스 패키지 유형, 하위 유형, 데이터 내용을 추출합니다.
     PackageType pkgType = data.packageType;
     SubType subType = data.subType;
     NSData *dataContent = data.getData;
     
+    // 델리게이트 메소드를 호출하여 패키지 유형 및 하위 유형에 대한 정보를 전달합니다.
     if (_blufiDelegate && [_blufiDelegate respondsToSelector:@selector(blufi:gattNotification:packageType:subType:)]) {
         BOOL complete = [_blufiDelegate blufi:self gattNotification:dataContent packageType:pkgType subType:subType];
         if (complete) {
@@ -466,11 +491,13 @@ enum {
         }
     }
     
+    // 패키지 유형에 따라 다른 메소드를 호출합니다.
     switch (pkgType) {
         case PackageCtrl:
             [self parseCtrlData:dataContent subType:subType];
             break;
         case PackageData:
+            // BLE 장치에서 받은 장치 메시지 파싱합니다. 
             [self parseDataData:dataContent subType:subType];
             break;
     }
@@ -482,7 +509,14 @@ enum {
     }
 }
 
+/**
+    블루투스 장치에서 전송된 데이터를 처리하는 메소드 중 하나입니다.
+
+    @param data 블루투스 장치에서 전송된 데이터입니다.
+    @param subType 데이터의 하위 유형입니다.
+ */
 - (void)parseDataData:(NSData *)data subType:(SubType)subType {
+    //
     switch (subType) {
         case DataSubTypeNeg:
             if (!_closed) {
@@ -499,6 +533,7 @@ enum {
             [self parseWiFiScanList:data];
             break;
         case DataSubTypeCustomData:
+            // 커스텀 데이터를 수신한 경우, onReceiveCustomData 메소드를 호출합니다. 
             [self onReceiveCustomData:data status:StatusSuccess];
             break;
         case DataSubTypeError: {
@@ -544,6 +579,12 @@ enum {
     [self onVersionResponse:response status:code];
 }
 
+
+/**
+BlufiStatusResponse 객체와 BlufiStatusCode를 인자로 받아서 델리게이트에게 디바이스 상태 응답을 전달하는 메소드입니다.
+@param response Blufi로부터 수신한 디바이스 상태 정보를 담은 BlufiStatusResponse 객체
+@param code Blufi 연결 상태 정보를 담은 BlufiStatusCode
+*/
 - (void)onDeviceStatusResponse:(BlufiStatusResponse *)response status:(BlufiStatusCode)code {
     id delegate = _blufiDelegate;
     BlufiClient *client = self;
@@ -553,7 +594,10 @@ enum {
         }];
     }
 }
-
+/**
+Wi-Fi 상태를 파싱하는 메소드입니다.
+@param data 파싱할 Wi-Fi 상태 데이터
+*/
 - (void)parseWifiState:(NSData *)data {
     BlufiStatusCode code;
     BlufiStatusResponse *response;
@@ -696,20 +740,35 @@ enum {
     }
 }
 
+/**
+ * Blufi 디바이스에 커스텀 데이터를 전송한 후 호출되는 메소드
+ *
+ * @param data 전송한 커스텀 데이터
+ * @param code 블루피 상태 코드
+ */
 - (void)onPostCustomData:(NSData *)data status:(BlufiStatusCode)code {
     id delegate = _blufiDelegate;
     BlufiClient *client = self;
     if (delegate && [delegate respondsToSelector:@selector(blufi:didPostCustomData:status:)]) {
+        // 델리게이트 객체가 blufi:didReceiveCustomData:status: 메소드를 구현하고 있는지 확인하고, 구현되어 있으면 해당 델리게이트 메소드를 실행합니다.
         [_callbackQueue addOperationWithBlock:^{
             [delegate blufi:client didPostCustomData:data status:code];
         }];
     }
 }
 
+/**
+    커스텀 데이터를 수신한 경우 호출되는 메소드입니다.
+
+    @param data 수신된 커스텀 데이터입니다.
+    @param code 수신 결과 상태 코드입니다.
+
+ */
 - (void)onReceiveCustomData:(NSData *)data status:(BlufiStatusCode)code {
     id delegate = _blufiDelegate;
     BlufiClient *client = self;
     if (delegate && [delegate respondsToSelector:@selector(blufi:didReceiveCustomData:status:)]) {
+        // 델리게이트 객체가 blufi:didReceiveCustomData:status: 메소드를 구현하고 있는지 확인하고, 구현되어 있으면 해당 델리게이트 메소드를 실행합니다.
         [_callbackQueue addOperationWithBlock:^{
             [delegate blufi:client didReceiveCustomData:data status:code];
         }];
@@ -762,13 +821,21 @@ enum {
     }];
 }
 
+/**
+주어진 데이터를 블루투스 장치에게 전송하는 메소드입니다.
+@param data 전송할 NSData 형태의 데이터
+*/
 - (void)postCustomData:(NSData *)data {
+    // 요청 큐에 블록 형태로 작업을 추가합니다.
     BOOL encrypted = _encrypted;
     BOOL checksum = _checksum;
     BOOL ack = _requireAck;
     [_requestQueue addOperationWithBlock:^{
+        // PackageData와 DataSubTypeCustomData에 대한 타입 값을 구합니다.
         Byte type = [self getTypeValueWithPackageType:PackageData subType:DataSubTypeCustomData];
+        // post 메소드를 호출하여 블루투스 장치에게 데이터를 전송하고 성공 여부를 확인합니다.
         BOOL posted = [self post:data encrypt:encrypted checksum:checksum requireAck:ack type:type];
+        // onPostCustomData 메소드를 호출하여 데이터 전송 결과를 델리게이트에게 알립니다.
         BlufiStatusCode code = posted ? StatusSuccess : StatusWriteFailed;
         [self onPostCustomData:data status:code];
     }];
@@ -857,6 +924,11 @@ enum {
     return [self post:data encrypt:_encrypted checksum:_checksum requireAck:_requireAck type:type];
 }
 
+
+/**
+ 연결된 블루투스 장치에게 설정 값을 보내는 메소드입니다.
+ @param params 전송할 설정 값이 담긴 BlufiConfigureParams 객체
+ */
 - (void)configure:(BlufiConfigureParams *)params {
     [_requestQueue addOperationWithBlock:^{
         OpMode opMode  = params.opMode;
@@ -868,7 +940,9 @@ enum {
                 }
                 [self onPostConfigureParams:StatusSuccess];
                 break;
+            // wifi 연결
             case OpModeSta:
+                // 장치 모드를 station 모드로 설정하고, SSID와 패스워드를 설정합니다.
                 if (![self postDeviceMode:opMode]) {
                     [self onPostConfigureParams:StatusWriteFailed];
                     return;

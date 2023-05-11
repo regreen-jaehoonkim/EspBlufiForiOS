@@ -348,11 +348,13 @@ typedef enum {
             [self.paramsDelegate didSetParams:params];
             [self.navigationController popViewControllerAnimated:YES];
         }
+    // OpMode이 Sta인 경우, wifi 연결
     } else if (self.displaymode == OpModeSta) {
         NSLog(@"%@,%@", self.WifiPasswordTextField.text, self.WifiSSidTextField.text);
         params.opMode = OpModeSta;
         params.staSsid = self.WifiSSidTextField.text;
         params.staPassword = self.WifiPasswordTextField.text;
+        // 델리게이트가 존재하면 BlufiConfigureParams를 델리게이트에 전달하고 현재 ViewController를 pop하여 이전 ViewController로 돌아감
         if (self.paramsDelegate) {
             [self.paramsDelegate didSetParams:params];
             [self.navigationController popViewControllerAnimated:YES];

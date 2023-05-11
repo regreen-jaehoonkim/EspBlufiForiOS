@@ -57,6 +57,8 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * @discussion Establish a BLE connection with CBPeripheral
  */
+
+ //  지정된 식별자를 가진 BLE 장치에 대한 연결을 시도하는 메소드입니다.
 - (void)connect:(NSString *)identifier;
 
 /*!
@@ -111,6 +113,7 @@ NS_ASSUME_NONNULL_BEGIN
  * @discussion Configure the device to a station or soft AP.
  *             The posted result will be notified in <link>blufi:didPostConfigureParams:</link>
  */
+ // 와이파이 연결 설정
 - (void)configure:(BlufiConfigureParams *)params;
 
 /*!
@@ -215,6 +218,13 @@ typedef enum {
  *
  * @discussion Invoked when received device status.
  */
+ /**
+ * 블루투스 장치로부터 장치 상태 응답을 받았을 때 호출되는 델리게이트 메소드입니다.
+
+ * @param client BlufiClient 객체
+ * @param response BlufiStatusResponse 객체 (있을 경우)
+ * @param status 응답 상태 코드
+*/
 - (void)blufi:(BlufiClient *)client didReceiveDeviceStatusResponse:(nullable BlufiStatusResponse *)response status:(BlufiStatusCode)status;
 
 /*!
@@ -247,6 +257,15 @@ typedef enum {
  *@param data received
  *@param status see  <code>BlufiStatusCode</code>, StatusSuccess means receive data success
  *
+ */
+
+ /**
+ * Blufi client에서 커스텀 데이터를 수신한 경우 호출되는 메소드
+ *
+ * @param client Blufi 클라이언트 객체
+ * @param data 수신된 커스텀 데이터
+ * @param status 블루피 상태 코드
+ * 
  */
 - (void)blufi:(BlufiClient *)client didReceiveCustomData:(NSData *)data status:(BlufiStatusCode)status;
 
