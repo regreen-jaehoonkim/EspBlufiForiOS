@@ -10,7 +10,7 @@
 
 #define SettingsFilter @"filterContent"
 #define UseCustomFilter @"useCustomFilter"
-#define DefaultFilter @"BLUFI"
+#define DefaultFilter @"REGREEN"
 
 @implementation ESPDataConversion
 

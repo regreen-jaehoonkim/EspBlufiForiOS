@@ -642,6 +642,7 @@ Wi-Fi 상태를 파싱하는 메소드입니다.
         [dataIS close];
     }
     
+    // 디바이스 상태 응답을 전달
     [self onDeviceStatusResponse:response status:code];
 }
 
@@ -744,7 +745,7 @@ Wi-Fi 상태를 파싱하는 메소드입니다.
  * Blufi 디바이스에 커스텀 데이터를 전송한 후 호출되는 메소드
  *
  * @param data 전송한 커스텀 데이터
- * @param code 블루피 상태 코드
+ * @param code Blufi 상태 코드
  */
 - (void)onPostCustomData:(NSData *)data status:(BlufiStatusCode)code {
     id delegate = _blufiDelegate;

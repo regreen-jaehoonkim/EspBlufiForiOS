@@ -246,10 +246,10 @@ typedef enum {
 }
 
 /**
-BlufiClient 객체를 생성하여 ESP32 기기에 연결합니다.
-연결 전에 _blufiClient 객체가 이미 생성되어 있다면 해당 객체를 close() 메소드를 호출하여 닫고 nil로 설정합니다.
-그 후 새로운 BlufiClient 객체를 생성하고 _blufiClient 객체의 중앙 관리자 및 peripheralDelegate, blufiDelegate를 설정한 후 ESP32 기기의 UUID를 매개변수로 connect() 메소드를 호출하여 연결을 시도합니다.
-연결 버튼은 눌림 상태를 false로 설정합니다.
+ * BlufiClient 객체를 생성하여 ESP32 기기에 연결합니다.
+ * 연결 전에 _blufiClient 객체가 이미 생성되어 있다면 해당 객체를 close() 메소드를 호출하여 닫고 nil로 설정합니다.
+ * 그 후 새로운 BlufiClient 객체를 생성하고 _blufiClient 객체의 중앙 관리자 및 peripheralDelegate, blufiDelegate를 설정한 후 ESP32 기기의 UUID를 매개변수로 connect() 메소드를 호출하여 연결을 시도합니다.
+ * 연결 버튼은 눌림 상태를 false로 설정합니다.
 */
 - (void)connect {
     [self setButton:_connectBtn enable:NO];
@@ -417,6 +417,7 @@ BlufiClient 객체를 생성하여 ESP32 기기에 연결합니다.
         [self setButton:self.stateBtn enable:self.connected];
     }];
     if (status == StatusSuccess) {
+        // 
         [self updateMessage:[NSString stringWithFormat:@"Receive device status:\n%@", response.getStatusInfo]];
     } else {
         [self updateMessage:[NSString stringWithFormat:@"Receive device status error: %d", status]];
